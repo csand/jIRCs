@@ -35,7 +35,7 @@ jSortedList.prototype.insert = function(obj) {
     var location = this.binarySearch(key);
     this.array.splice(location, 0, obj);
     if (key in this.lookupDict) {
-        this.lookupDict[key].append(obj);
+        this.lookupDict[key].push(obj);
     } else {
         this.lookupDict[key] = [obj];
     }
