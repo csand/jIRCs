@@ -77,6 +77,7 @@ jIRCs.prototype.parseModes = function(channel, modes, params) {
                 if (this.statusOrder.indexOf(mode) != -1) {
                     var nick = params.shift();
                     var user = this.channels[channel].users.lookupByKey(nick);
+                    this.channels[channel].users.remove(user);
                     this.forEach(this.displays, function(disobj) {
                         if(disobj.viewing == channel) {
                             this.removeUser(disobj);
@@ -100,6 +101,7 @@ jIRCs.prototype.parseModes = function(channel, modes, params) {
                             user.statusList = symarr.join('');
                         }
                     }
+                    this.channels[channel].users.insert(user);
                     this.forEach(this.displays, function(disobj) {
                         if(disobj.viewing == channel) {
                             this.addUser(disobj);

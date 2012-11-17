@@ -201,6 +201,7 @@ jIRCs.prototype.say = function(message, location) {
 function jUser(nickname) {
     this.nickname = nickname;
     this.statusList = '';
+    this.element = null;
 }
 
 function jUserKeyFunc(u) {

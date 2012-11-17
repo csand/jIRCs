@@ -46,7 +46,6 @@ jIRCs.prototype.display = function(container) {
         'messages': messages,
         'notification': notification,
         'userlist': userlist,
-        'userlist_dict': {},
         'ulistw': 0,
         'ulisth': 0,
         // How much do we skew our measurements by?
@@ -356,48 +355,20 @@ jIRCs.prototype.renderUserList = function(disobj) {
     disobj.ulistw = 0, disobj.ulisth = 0;
     if(disobj.viewing in this.channels) {
         disobj.userlist.innerHTML = "";
-        var users = {};
-        var prefix = '', rank = '';
-        // Break users into ranks
-        this.forEach(this.channels[disobj.viewing].users.array, function(user) {
-            var u = user.nickname;
-            var prefix = user.statusList;
-            if(prefix.length) {
-                prefix = prefix.charAt(0);
-            }
-            rank = prefix in this.statuses ? this.statuses[prefix] : '';
-            if(!(rank in users)) {
-                users[rank] = [];
-            }
-            users[rank].push(prefix + u);
-        }, this);
         // Add users to DOM
-        disobj.userlist_dict = {};
-        this.forEach(this.statusOrder, function(r) {
-            if(!(r in users)) {
-                return;
-            }
-            var ulist = users[r];
-            // Case insensitive sort
-            ulist.sort(function(a,b) { if(a.toLowerCase() > b.toLowerCase()) return 1; if(a.toLowerCase() < b.toLowerCase()) return -1; return 0;});
-            this.forEach(ulist, function(u) {
-                var p = document.createElement('p');
-                p.style.margin = "0";
-                p.style.cursor = "pointer";
-                this.listen(p, "click", this.el_userentry_click, disobj);
-                p.appendChild(document.createTextNode(u));
-                p.className = 'jircs_userlist_user';
-                disobj.userlist.appendChild(p);
-                if(u.charAt(0) in this.statusSymbols) {
-                    nick = u.substr(1);
-                } else {
-                    nick = u;
-                }
-                disobj.userlist_dict[u] = p;
-                var dim = this.measureText(u,'jircs_userlist_user');
-                disobj.ulistw = Math.max(dim["width"], disobj.ulistw);
-                disobj.ulisth += dim["height"];
-            }, this);
+        this.forEach(this.channels[disobj.viewing].users.array, function(user) {
+            var p = document.createElement('p');
+            p.style.margin = "0";
+            p.style.cursor = "pointer";
+            this.listen(p, "click", this.el_userentry_click, disobj);
+            var text = jUserKeyFunc(user);
+            p.appendChild(document.createTextNode(text));
+            p.className = 'jircs_userlist_user';
+            disobj.userlist.appendChild(p);
+            user.element = p;
+            var dim = this.measureText(text, 'jircs_userlist_user');
+            disobj.ulistw = Math.max(dim["width"], disobj.ulistw);
+            disobj.ulisth += dim["height"];
         }, this);
     }
     if(disobj.ulisth > disobj.window.clientHeight) {
@@ -413,14 +384,12 @@ jIRCs.prototype.addUser = function(disobj, user) {
     disobj.chat.style.width = (disobj.window.clientWidth - disobj.userlist.offsetWidth - disobj.fudgeFactor) + "px";
 };
 
-jIRCs.prototype.removeUser = function(disobj, user) {
-    if (user in disobj.userlist_dict) {
-        var entry = disobj.userlist_dict[user];
-        disobj.userlist.removeChild(entry);
-        delete disobj.userlist_dict[user];
+jIRCs.prototype.removeUser = function(disobj, nick) {
+    var user = this.channels[disobj.viewing].users.lookupByKey(nick);
+    if (user) {
+        disobj.userlist.removeChild(user.element);
 
-        // just measuring size of nickname, not including @, &, ~, but we are only using the height here
-        var dim = this.measureText(user, 'jircs_userlist_user');
+        var dim = this.measureText(user.statusList + nick, 'jircs_userlist_user');
         disobj.ulisth -= dim["height"];
         if(disobj.ulisth > disobj.window.clientHeight) {
             disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor + this.calculateScrollWidth()) + 'px';
