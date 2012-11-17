@@ -44,9 +44,6 @@ jIRCs.prototype.irc_JOIN = function(prefix, args) {
         if(channel.charAt(0) == "#" && prefix == this.nickname) {
             this.activateChan(channel, disobj);
         }
-        if(disobj.viewing == channel) {
-            this.addUser(disobj);
-        }
     }, this);
 };
 
@@ -57,27 +54,12 @@ jIRCs.prototype.irc_PART = function(prefix, args) {
         this.destroyChan(channel);
     } else {
         //this.renderLine(channel, channel, prefix + " left " + channel + " [" + reason + "]");
-
         this.channels[channel].users.removeByKey(prefix);
-
-        this.forEach(this.displays, function(disobj) {
-            if(disobj.viewing == channel) {
-                this.removeUser(disobj, prefix);
-            }
-        }, this);
     }
 };
 
 jIRCs.prototype.irc_QUIT = function(prefix, args) { 
     var reason = args.pop();
-    if(this.getNick(prefix) == this.nickname) {
-        // Let ondisconnect handle cleanup
-    } else {
-        this.forEach(this.displays, function(disobj) {
-            console.log("QUIT " + prefix);
-            this.removeUser(disobj, prefix);
-        }, this);
-    }
     this.forEach(this.channels, function(c, channel) {
         if(channel == 'Status') {
             return;

@@ -10,6 +10,8 @@ function jSortedList(keyFunction, compareFunction) {
     this.compareFunction = compareFunction;
     this.keyDict = {};
     this.nameDict = {};
+    this.insertCallbacks = [];
+    this.removeCallbacks = [];
 };
 
 // Returns the index of an element in the array, or the index where it could be inserted
@@ -37,18 +39,26 @@ jSortedList.prototype.insert = function(obj) {
         this.removeByKey(key);
     }
     var location = this.binarySearch(key);
+    var isLast = location == this.array.length;
     this.array.splice(location, 0, obj);
     this.keyDict[key] = obj;
     this.nameDict[obj.nickname] = obj;
+    for (var i = 0; i < this.insertCallbacks.length; i++) {
+        this.insertCallbacks[i](obj, isLast ? null : this.array[location + 1]);
+    }
 };
 
 jSortedList.prototype.removeByKey = function(key) {
     if (key in this.keyDict) {
+        var obj = this.keyDict[key];
         var location = this.binarySearch(key);
         this.array.splice(location, 1);
-        var name = this.keyDict[key].nickname;
+        var name = obj.nickname;
         delete this.keyDict[key];
         delete this.nameDict[name];
+        for (var i = 0; i < this.removeCallbacks.length; i++) {
+            this.removeCallbacks[i](obj);
+        }
     }
 };
 
@@ -60,6 +70,9 @@ jSortedList.prototype.remove = function(obj) {
         var name = this.keyDict[key].nickname;
         delete this.keyDict[key];
         delete this.nameDict[name];
+        for (var i = 0; i < this.removeCallbacks.length; i++) {
+            this.removeCallbacks[i](obj);
+        }
     }
 };
 
@@ -68,4 +81,31 @@ jSortedList.prototype.lookupByName = function(name) {
         return this.nameDict[name];
     }
     return null;
-}
+};
+
+jSortedList.prototype.registerInsertCallback = function(callback) {
+    this.insertCallbacks.push(callback);
+};
+
+jSortedList.prototype.unregisterInsertCallback = function(callback) {
+    for (var i = 0; i < this.insertCallbacks.length; i++) {
+        if (this.insertCallbacks[i] == callback) {
+            this.insertCallbacks.splice(i, 1);
+            return;
+        }
+    }
+};
+
+jSortedList.prototype.registerRemoveCallback = function(callback) {
+    this.removeCallbacks.push(callback);
+};
+
+jSortedList.prototype.unregisterRemoveCallback = function(callback) {
+    for (var i = 0; i < this.removeCallbacks.length; i++) {
+        if (this.removeCallbacks[i] == callback) {
+            this.removeCallbacks.splice(i, 1);
+            return;
+        }
+    }
+};
+

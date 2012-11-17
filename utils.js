@@ -76,11 +76,6 @@ jIRCs.prototype.parseModes = function(channel, modes, params) {
             default:
                 if (this.statusOrder.indexOf(mode) != -1) {
                     var nick = params.shift();
-                    this.forEach(this.displays, function(disobj) {
-                        if(disobj.viewing == channel) {
-                            this.removeUser(disobj, nick);
-                        }
-                    }, this);
                     var user = this.channels[channel].users.lookupByName(nick);
                     this.channels[channel].users.remove(user);
                     if (adding) {
@@ -102,11 +97,6 @@ jIRCs.prototype.parseModes = function(channel, modes, params) {
                         }
                     }
                     this.channels[channel].users.insert(user);
-                    this.forEach(this.displays, function(disobj) {
-                        if(disobj.viewing == channel) {
-                            this.addUser(disobj);
-                        }
-                    }, this);
                 } else {
                     var modeType = this.chanModes[mode];
                     // skip mode 0 because it's not worth the hassle to keep list modes in sync

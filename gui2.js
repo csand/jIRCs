@@ -81,7 +81,9 @@ jIRCs.prototype.display = function(container) {
             'show_auction': true
         },
         'auction_running': false,
-        'note_timer': false
+        'note_timer': false,
+        'userInsertCallback': null,
+        'userRemoveCallback': null,
     };
     
     // Set all them fancy classes
@@ -265,7 +267,15 @@ jIRCs.prototype.activateChan = function(channel, disobj) {
         }, this);
         disobj.tabs[channel].className += " jircs_tab_active";
         disobj.history.push(disobj.viewing);
+
+        this.channels[disobj.viewing].users.unregisterInsertCallback(disobj.userInsertCallback);
+        this.channels[disobj.viewing].users.unregisterRemoveCallback(disobj.userRemoveCallback);
         disobj.viewing = channel;
+        disobj.userInsertCallback = this.userListInsert.bind(this, disobj);
+        disobj.userRemoveCallback = this.userListRemove.bind(this, disobj);
+        this.channels[disobj.viewing].users.registerInsertCallback(disobj.userInsertCallback);
+        this.channels[disobj.viewing].users.registerRemoveCallback(disobj.userRemoveCallback);
+
         // Re-render (involves replacing all the messages)
         disobj.messages.innerHTML = "";
         this.forEach(disobj.lines[channel], function(line) {
@@ -379,23 +389,37 @@ jIRCs.prototype.renderUserList = function(disobj) {
     disobj.userlist.style.height = disobj.window.clientHeight + "px";
 };
 
-jIRCs.prototype.addUser = function(disobj, user) {
-    this.renderUserList(disobj);
+jIRCs.prototype.userListInsert = function(disobj, user, referenceUser) {
+    var p = document.createElement('p');
+    p.style.margin = "0";
+    p.style.cursor = "pointer";
+    this.listen(p, "click", this.el_userentry_click, disobj);
+    var text = jUserKeyFunc(user);
+    p.appendChild(document.createTextNode(text));
+    p.className = 'jircs_userlist_user';
+    disobj.userlist.insertBefore(p, referenceUser.element);
+    user.element = p;
+    var dim = this.measureText(text, 'jircs_userlist_user');
+    disobj.ulistw = Math.max(dim["width"], disobj.ulistw);
+    disobj.ulisth += dim["height"];
+    if(disobj.ulisth > disobj.window.clientHeight) {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor + this.calculateScrollWidth()) + 'px';
+    } else {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor) + 'px';
+    }
+    disobj.userlist.style.height = disobj.window.clientHeight + "px";
     disobj.chat.style.width = (disobj.window.clientWidth - disobj.userlist.offsetWidth - disobj.fudgeFactor) + "px";
 };
 
-jIRCs.prototype.removeUser = function(disobj, nick) {
-    var user = this.channels[disobj.viewing].users.lookupByName(nick);
-    if (user) {
-        disobj.userlist.removeChild(user.element);
+jIRCs.prototype.userListRemove = function(disobj, user) {
+    disobj.userlist.removeChild(user.element);
 
-        var dim = this.measureText(user.statusList + nick, 'jircs_userlist_user');
-        disobj.ulisth -= dim["height"];
-        if(disobj.ulisth > disobj.window.clientHeight) {
-            disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor + this.calculateScrollWidth()) + 'px';
-        } else {
-            disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor) + 'px';
-        }
+    var dim = this.measureText(user.statusList + user.nickname, 'jircs_userlist_user');
+    disobj.ulisth -= dim["height"];
+    if (disobj.ulisth > disobj.window.clientHeight) {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor + this.calculateScrollWidth()) + 'px';
+    } else {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor) + 'px';
     }
 };
 
