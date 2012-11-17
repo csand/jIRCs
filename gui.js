@@ -93,7 +93,7 @@ jIRCs.prototype.display = function(domobj) {
             var name = e.target.value.substring(begin,end);
             var possible = [];
             // Complete the name
-            self.forEach(self.channels[disobj.window].users.array, function(user, i) {
+            self.forEach(self.channels[disobj.window].users.array, function(user) {
                 var n = user.nickname;
                 var status = user.statusList;
                 if(n.substring(0,name.length).toLowerCase() == name.toLowerCase()) {
@@ -481,7 +481,7 @@ jIRCs.prototype.renderUserlist = function(disobj) {
     var users = {};
     var prefix = '', rank = '';
     var width = 0, height = 0;
-    this.forEach(this.channels[disobj.window].users, function(user, i) {
+    this.forEach(this.channels[disobj.window].users, function(user) {
         var u = user.nickname;
         var prefix = user.statusList;
         if(prefix.length) {

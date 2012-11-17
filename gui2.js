@@ -359,7 +359,7 @@ jIRCs.prototype.renderUserList = function(disobj) {
         var users = {};
         var prefix = '', rank = '';
         // Break users into ranks
-        this.forEach(this.channels[disobj.viewing].users.array, function(user, i) {
+        this.forEach(this.channels[disobj.viewing].users.array, function(user) {
             var u = user.nickname;
             var prefix = user.statusList;
             if(prefix.length) {
@@ -833,7 +833,7 @@ jIRCs.prototype.el_input_keydown = function(disobj, e) {
         var name = e.target.value.substring(begin,end);
         var possible = [];
         // Complete the name
-        this.forEach(this.channels[disobj.viewing].users.array, function(user, i) {
+        this.forEach(this.channels[disobj.viewing].users.array, function(user) {
             var n = user.nickname;
             if(n.substring(0,name.length).toLowerCase() == name.toLowerCase()) {
                 possible.push(n);
