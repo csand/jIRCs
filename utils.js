@@ -77,6 +77,11 @@ jIRCs.prototype.parseModes = function(channel, modes, params) {
                 if (this.statusOrder.indexOf(mode) != -1) {
                     var nick = params.shift();
                     var user = this.channels[channel].users.lookupByKey(nick);
+                    this.forEach(this.displays, function(disobj) {
+                        if(disobj.viewing == channel) {
+                            this.removeUser(disobj);
+                        }
+                    }, this);
                     if (adding) {
                         var oldPrefix = user.statusList + this.statuses[mode];
                         var newPrefix = '';
@@ -97,7 +102,7 @@ jIRCs.prototype.parseModes = function(channel, modes, params) {
                     }
                     this.forEach(this.displays, function(disobj) {
                         if(disobj.viewing == channel) {
-                            this.render(disobj);
+                            this.addUser(disobj);
                         }
                     }, this);
                 } else {
