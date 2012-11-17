@@ -12,13 +12,13 @@ function jSortedList(keyFunction, compareFunction) {
 };
 
 // Returns the index of an element in the array, or the index where it could be inserted
-jSortedList.prototype.binarySearch = function(needle) {
+jSortedList.prototype.binarySearch = function(needleKey) {
     var left = 0;
     var right = this.array.length;
     var middle;
     while (right > left) {
         middle = Math.floor((left + right) / 2);
-        var result = this.compareFunction(this.array[middle], needle);
+        var result = this.compareFunction(this.keyFunction(this.array[middle]), needleKey);
         if (result < 0) {
             left = middle + 1;
         } else if (result > 0) {

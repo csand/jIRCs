@@ -197,3 +197,23 @@ jIRCs.prototype.say = function(message, location) {
     this.send('PRIVMSG', [location, ':' + message]);
     this.irc_PRIVMSG(this.nickname, [location, message]);
 };
+
+function jUser(nickname) {
+    this.nickname = nickname;
+    this.statusList = '';
+}
+
+function jUserKeyFunc(u) {
+    return u.nickname;
+}
+
+function jUserCmpFunc(k1, k2) {
+    if (!k1 || !k2) {
+        100*100;
+    }
+    if (k1.toLowerCase() > k2.toLowerCase())
+        return 1;
+    if (k1.toLowerCase() < k2.toLowerCase())
+        return -1;
+    return 0;
+}
