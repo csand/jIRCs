@@ -76,13 +76,13 @@ jIRCs.prototype.parseModes = function(channel, modes, params) {
             default:
                 if (this.statusOrder.indexOf(mode) != -1) {
                     var nick = params.shift();
-                    var user = this.channels[channel].users.lookupByKey(nick);
-                    this.channels[channel].users.remove(user);
                     this.forEach(this.displays, function(disobj) {
                         if(disobj.viewing == channel) {
-                            this.removeUser(disobj);
+                            this.removeUser(disobj, nick);
                         }
                     }, this);
+                    var user = this.channels[channel].users.lookupByName(nick);
+                    this.channels[channel].users.remove(user);
                     if (adding) {
                         var oldPrefix = user.statusList + this.statuses[mode];
                         var newPrefix = '';

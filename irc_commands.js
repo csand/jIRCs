@@ -11,7 +11,7 @@ jIRCs.prototype.irc_NICK = function(prefix, args) {
     }
     this.forEach(this.channels, function(c, channel) {
         if (c.users) {
-            var user = c.users.lookupByKey(oldNick);
+            var user = c.users.lookupByName(oldNick);
             if (user) {
                 this.renderLine(channel, channel, oldNick + ' is now known as ' + newNick);
                 c.users.remove(user);
@@ -70,24 +70,25 @@ jIRCs.prototype.irc_PART = function(prefix, args) {
 
 jIRCs.prototype.irc_QUIT = function(prefix, args) { 
     var reason = args.pop();
+    if(this.getNick(prefix) == this.nickname) {
+        // Let ondisconnect handle cleanup
+    } else {
+        this.forEach(this.displays, function(disobj) {
+            console.log("QUIT " + prefix);
+            this.removeUser(disobj, prefix);
+        }, this);
+    }
     this.forEach(this.channels, function(c, channel) {
         if(channel == 'Status') {
             return;
         }
         if (c.users) {
-            var user = c.users.lookupByKey(prefix);
+            var user = c.users.lookupByName(prefix);
             if (user) {
                 c.users.remove(user);
             }
         }
     }, this);
-    if(this.getNick(prefix) == this.nickname) {
-        // Let ondisconnect handle cleanup
-    } else {
-        this.forEach(this.displays, function(disobj) {
-            this.removeUser(disobj, prefix);
-        }, this);
-    }
 };
 
 jIRCs.prototype.irc_PRIVMSG = function(prefix, args) { 

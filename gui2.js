@@ -385,7 +385,7 @@ jIRCs.prototype.addUser = function(disobj, user) {
 };
 
 jIRCs.prototype.removeUser = function(disobj, nick) {
-    var user = this.channels[disobj.viewing].users.lookupByKey(nick);
+    var user = this.channels[disobj.viewing].users.lookupByName(nick);
     if (user) {
         disobj.userlist.removeChild(user.element);
 

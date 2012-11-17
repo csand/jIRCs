@@ -209,9 +209,6 @@ function jUserKeyFunc(u) {
 }
 
 function jUserCmpFunc(k1, k2) {
-    if (!k1 || !k2) {
-        100*100;
-    }
     if (k1.toLowerCase() > k2.toLowerCase())
         return 1;
     if (k1.toLowerCase() < k2.toLowerCase())

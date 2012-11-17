@@ -8,7 +8,8 @@ function jSortedList(keyFunction, compareFunction) {
     this.array = [];
     this.keyFunction = keyFunction
     this.compareFunction = compareFunction;
-    this.lookupDict = {};
+    this.keyDict = {};
+    this.nameDict = {};
 };
 
 // Returns the index of an element in the array, or the index where it could be inserted
@@ -32,43 +33,39 @@ jSortedList.prototype.binarySearch = function(needleKey) {
 
 jSortedList.prototype.insert = function(obj) {
     var key = this.keyFunction(obj);
+    if (key in this.keyDict) {
+        this.removeByKey(key);
+    }
     var location = this.binarySearch(key);
     this.array.splice(location, 0, obj);
-    if (key in this.lookupDict) {
-        this.lookupDict[key].push(obj);
-    } else {
-        this.lookupDict[key] = [obj];
-    }
+    this.keyDict[key] = obj;
+    this.nameDict[obj.nickname] = obj;
 };
 
 jSortedList.prototype.removeByKey = function(key) {
-    if (key in this.lookupDict) {
+    if (key in this.keyDict) {
         var location = this.binarySearch(key);
         this.array.splice(location, 1);
-        this.lookupDict[key].pop();
-        if (this.lookupDict[key].length == 0) {
-            delete this.lookupDict[key];
-        }
+        var name = this.keyDict[key].nickname;
+        delete this.keyDict[key];
+        delete this.nameDict[name];
     }
 };
 
 jSortedList.prototype.remove = function(obj) {
     var key = this.keyFunction(obj);
-    if (key in this.lookupDict) {
+    if (key in this.keyDict) {
         var location = this.binarySearch(key);
         this.array.splice(location, 1);
-        this.lookupDict[key].pop();
-        if (this.lookupDict[key].length == 0) {
-            delete this.lookupDict[key];
-        }
+        var name = this.keyDict[key].nickname;
+        delete this.keyDict[key];
+        delete this.nameDict[name];
     }
 };
 
-jSortedList.prototype.lookupByKey = function(key) {
-    if (key in this.lookupDict) {
-        if (this.lookupDict[key].length > 0) {
-            return this.lookupDict[key][0];
-        }
+jSortedList.prototype.lookupByName = function(name) {
+    if (name in this.nameDict) {
+        return this.nameDict[name];
     }
     return null;
 }
