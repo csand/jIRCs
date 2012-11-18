@@ -27,6 +27,14 @@ jIRCs.prototype.irc_NICK = function(prefix, args) {
 
 jIRCs.prototype.irc_JOIN = function(prefix, args) { 
     var channel = args.pop().toLowerCase();
+    if(!(channel in this.channels)) {
+        // Initiate channel
+        this.channels[channel] = {
+            'users': new jSortedList(jUserKeyFunc, jUserCmpFunc),
+            'modes': {},
+        };
+    }
+
     if(prefix != this.nickname) {
         //this.renderLine(channel, channel, prefix + " joined " + channel);
     } else {
@@ -254,7 +262,7 @@ jIRCs.prototype.irc_353 = function(prefix, args) {
     var channel = args[2].toLowerCase();
     if (!this.channels[channel].moreNames) {
         this.channels[channel].moreNames = true;
-        this.channels[channel].users = new jSortedList(jUserKeyFunc, jUserCmpFunc);
+        this.channels[channel].users.erase();
     }
     var names = args[3].split(' '); // Strip the colon and split the names out
     this.forEach(names, function(name) {

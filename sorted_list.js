@@ -76,6 +76,18 @@ jSortedList.prototype.remove = function(obj) {
     }
 };
 
+jSortedList.prototype.erase = function(callback) {
+    var tempArray = this.array;
+    this.array = [];
+    this.keyDict = {};
+    this.nameDict = {};
+    for (var i = 0; i < tempArray.length; i++) {
+        for (var j = 0; j < this.removeCallbacks.length; i++) {
+            this.removeCallbacks[j](tempArray[i]);
+        }
+    }
+};
+
 jSortedList.prototype.lookupByName = function(name) {
     if (name in this.nameDict) {
         return this.nameDict[name];

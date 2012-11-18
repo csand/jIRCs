@@ -268,8 +268,19 @@ jIRCs.prototype.activateChan = function(channel, disobj) {
         disobj.tabs[channel].className += " jircs_tab_active";
         disobj.history.push(disobj.viewing);
 
-        this.channels[disobj.viewing].users.unregisterInsertCallback(disobj.userInsertCallback);
-        this.channels[disobj.viewing].users.unregisterRemoveCallback(disobj.userRemoveCallback);
+        // TODO: Encapsulate lazy instantiation of channels
+        if(!(channel in this.channels)) {
+            // Initiate channel
+            this.channels[channel] = {
+                'users': new jSortedList(jUserKeyFunc, jUserCmpFunc),
+                'modes': {},
+            };
+        }
+
+        if (disobj.viewing && this.channels[disobj.viewing]) {
+            this.channels[disobj.viewing].users.unregisterInsertCallback(disobj.userInsertCallback);
+            this.channels[disobj.viewing].users.unregisterRemoveCallback(disobj.userRemoveCallback);
+        }
         disobj.viewing = channel;
         disobj.userInsertCallback = this.userListInsert.bind(this, disobj);
         disobj.userRemoveCallback = this.userListRemove.bind(this, disobj);
@@ -458,13 +469,6 @@ jIRCs.prototype.renderLine = function(channel, speaker, message, disobj) {
         "name": this.measureText(user.textContent || user.innerText, user.className).width,
         "message": this.measureText(text.textContent || text.innerText, text.className).width
     };
-    if(!(channel in this.channels)) {
-            // Initiate channel
-            this.channels[channel] = {
-                'users': new jSortedList(jUserKeyFunc, jUserCmpFunc),
-                'modes': {},
-            };
-    }
     // Track open channels
     var open = [];
     this.forEach(this.displays, function(d) {
