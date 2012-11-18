@@ -24,7 +24,9 @@ jIRCs.prototype.command_MSG = function(args) {
 };
 
 jIRCs.prototype.command_PART = function(args) {
-    var channel = args.shift().toLowerCase();
+    var channel = args.shift();
+    if(!channel) channel = this.displays[0].viewing;
+    channel = channel.toLowerCase();
     this.destroyChan(channel);
 };
 

@@ -27,9 +27,10 @@ jIRCs.prototype.display = function(container) {
     var status_hideulist = document.createElement("a");
     var status_hideauction = document.createElement("a");
     var auction_image = document.createElement("img");
-    var auction_title = document.createElement("span");
-    var auction_bidder = document.createElement("span");
-    var auction_bid = document.createElement("span");
+    var auction_holder = document.createElement("div");
+    var auction_title = document.createElement("div");
+    var auction_bidder = document.createElement("div");
+    var auction_bid = document.createElement("div");
     var auction_form = document.createElement("form");
     var auction_input = document.createElement("input");
     var auction_submit = document.createElement("input");
@@ -60,6 +61,7 @@ jIRCs.prototype.display = function(container) {
         'status_hideulist': status_hideulist,
         'status_hideauction': status_hideauction,
         'auction_image': auction_image,
+        'auction_holder': auction_holder,
         'auction_title': auction_title,
         'auction_bidder': auction_bidder,
         'auction_bid': auction_bid,
@@ -104,6 +106,7 @@ jIRCs.prototype.display = function(container) {
     status_hideulist.className = "jircs_status_hideulist";
     status_hideauction.className = "jircs_status_hideauction";
     auction_image.className = "jircs_auction_image";
+    auction_holder.className = "jircs_auction_holder";
     auction_title.className = "jircs_auction_title";
     auction_bidder.className = "jircs_auction_bidder";
     auction_bid.className = "jircs_auction_bid";
@@ -167,11 +170,12 @@ jIRCs.prototype.display = function(container) {
     status_special.appendChild(status_hideauction);
     status.appendChild(status_normal);
     status.appendChild(status_special);
+    auction_holder.appendChild(auction_title);
+    auction_holder.appendChild(auction_bidder);
+    auction_holder.appendChild(auction_bid);
+    auction_holder.appendChild(auction_form);
     auction.appendChild(auction_image);
-    auction.appendChild(auction_title);
-    auction.appendChild(auction_bidder);
-    auction.appendChild(auction_bid);
-    auction.appendChild(auction_form);
+    auction.appendChild(auction_holder);
     auction_form.appendChild(auction_input);
     auction_form.appendChild(auction_submit);
     
