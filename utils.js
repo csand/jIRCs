@@ -75,30 +75,28 @@ jIRCs.prototype.parseModes = function(channel, modes, params) {
                 break;
             default:
                 if (this.statusOrder.indexOf(mode) != -1) {
-                    var user = params.shift();
+                    var nick = params.shift();
+                    var user = this.channels[channel].users.lookupByName(nick);
+                    this.channels[channel].users.remove(user);
                     if (adding) {
-                        var oldPrefix = this.channels[channel].names[user] + this.statuses[mode];
+                        var oldPrefix = user.statusList + this.statuses[mode];
                         var newPrefix = '';
                         this.forEach(this.statusOrder, function(m) {
                             if (oldPrefix.indexOf(this.statuses[m]) != -1) {
                                 newPrefix += this.statuses[m];
                             }
                         }, this);
-                        this.channels[channel].names[user] = newPrefix;
+                        user.statusList = newPrefix;
                     } else {
                         var symbol = this.statuses[mode];
-                        var symPos = this.channels[channel].names[user].indexOf(symbol);
+                        var symPos = user.statusList.indexOf(symbol);
                         if (symPos != -1) {
-                            var symarr = this.channels[channel].names[user].split('');
+                            var symarr = user.statusList.split('');
                             symarr.splice(symPos, 1);
-                            this.channels[channel].names[user] = symarr.join('');
+                            user.statusList = symarr.join('');
                         }
                     }
-                    this.forEach(this.displays, function(disobj) {
-                        if(disobj.viewing == channel) {
-                            this.render(disobj);
-                        }
-                    }, this);
+                    this.channels[channel].users.insert(user);
                 } else {
                     var modeType = this.chanModes[mode];
                     // skip mode 0 because it's not worth the hassle to keep list modes in sync

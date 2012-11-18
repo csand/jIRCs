@@ -46,7 +46,6 @@ jIRCs.prototype.display = function(container) {
         'messages': messages,
         'notification': notification,
         'userlist': userlist,
-        'userlist_dict': {},
         'ulistw': 0,
         'ulisth': 0,
         // How much do we skew our measurements by?
@@ -82,7 +81,9 @@ jIRCs.prototype.display = function(container) {
             'show_auction': true
         },
         'auction_running': false,
-        'note_timer': false
+        'note_timer': false,
+        'userInsertCallback': null,
+        'userRemoveCallback': null,
     };
     
     // Set all them fancy classes
@@ -266,7 +267,26 @@ jIRCs.prototype.activateChan = function(channel, disobj) {
         }, this);
         disobj.tabs[channel].className += " jircs_tab_active";
         disobj.history.push(disobj.viewing);
+
+        // TODO: Encapsulate lazy instantiation of channels
+        if(!(channel in this.channels)) {
+            // Initiate channel
+            this.channels[channel] = {
+                'users': new jSortedList(jUserKeyFunc, jUserCmpFunc),
+                'modes': {},
+            };
+        }
+
+        if (disobj.viewing && this.channels[disobj.viewing]) {
+            this.channels[disobj.viewing].users.unregisterInsertCallback(disobj.userInsertCallback);
+            this.channels[disobj.viewing].users.unregisterRemoveCallback(disobj.userRemoveCallback);
+        }
         disobj.viewing = channel;
+        disobj.userInsertCallback = this.userListInsert.bind(this, disobj);
+        disobj.userRemoveCallback = this.userListRemove.bind(this, disobj);
+        this.channels[disobj.viewing].users.registerInsertCallback(disobj.userInsertCallback);
+        this.channels[disobj.viewing].users.registerRemoveCallback(disobj.userRemoveCallback);
+
         // Re-render (involves replacing all the messages)
         disobj.messages.innerHTML = "";
         this.forEach(disobj.lines[channel], function(line) {
@@ -356,46 +376,20 @@ jIRCs.prototype.renderUserList = function(disobj) {
     disobj.ulistw = 0, disobj.ulisth = 0;
     if(disobj.viewing in this.channels) {
         disobj.userlist.innerHTML = "";
-        var users = {};
-        var prefix = '', rank = '';
-        // Break users into ranks
-        this.forEach(this.channels[disobj.viewing].names, function(prefix, u) {
-            if(prefix.length) {
-                prefix = prefix.charAt(0);
-            }
-            rank = prefix in this.statuses ? this.statuses[prefix] : '';
-            if(!(rank in users)) {
-                users[rank] = [];
-            }
-            users[rank].push(prefix + u);
-        }, this);
         // Add users to DOM
-        disobj.userlist_dict = {};
-        this.forEach(this.statusOrder, function(r) {
-            if(!(r in users)) {
-                return;
-            }
-            var ulist = users[r];
-            // Case insensitive sort
-            ulist.sort(function(a,b) { if(a.toLowerCase() > b.toLowerCase()) return 1; if(a.toLowerCase() < b.toLowerCase()) return -1; return 0;});
-            this.forEach(ulist, function(u) {
-                var p = document.createElement('p');
-                p.style.margin = "0";
-                p.style.cursor = "pointer";
-                this.listen(p, "click", this.el_userentry_click, disobj);
-                p.appendChild(document.createTextNode(u));
-                p.className = 'jircs_userlist_user';
-                disobj.userlist.appendChild(p);
-                if(u.charAt(0) in this.statusSymbols) {
-                    nick = u.substr(1);
-                } else {
-                    nick = u;
-                }
-                disobj.userlist_dict[u] = p;
-                var dim = this.measureText(u,'jircs_userlist_user');
-                disobj.ulistw = Math.max(dim["width"], disobj.ulistw);
-                disobj.ulisth += dim["height"];
-            }, this);
+        this.forEach(this.channels[disobj.viewing].users.array, function(user) {
+            var p = document.createElement('p');
+            p.style.margin = "0";
+            p.style.cursor = "pointer";
+            this.listen(p, "click", this.el_userentry_click, disobj);
+            var text = jUserKeyFunc(user);
+            p.appendChild(document.createTextNode(text));
+            p.className = 'jircs_userlist_user';
+            disobj.userlist.appendChild(p);
+            user.element = p;
+            var dim = this.measureText(text, 'jircs_userlist_user');
+            disobj.ulistw = Math.max(dim["width"], disobj.ulistw);
+            disobj.ulisth += dim["height"];
         }, this);
     }
     if(disobj.ulisth > disobj.window.clientHeight) {
@@ -406,25 +400,37 @@ jIRCs.prototype.renderUserList = function(disobj) {
     disobj.userlist.style.height = disobj.window.clientHeight + "px";
 };
 
-jIRCs.prototype.addUser = function(disobj, user) {
-    this.renderUserList(disobj);
+jIRCs.prototype.userListInsert = function(disobj, user, referenceUser) {
+    var p = document.createElement('p');
+    p.style.margin = "0";
+    p.style.cursor = "pointer";
+    this.listen(p, "click", this.el_userentry_click, disobj);
+    var text = jUserKeyFunc(user);
+    p.appendChild(document.createTextNode(text));
+    p.className = 'jircs_userlist_user';
+    disobj.userlist.insertBefore(p, referenceUser.element);
+    user.element = p;
+    var dim = this.measureText(text, 'jircs_userlist_user');
+    disobj.ulistw = Math.max(dim["width"], disobj.ulistw);
+    disobj.ulisth += dim["height"];
+    if(disobj.ulisth > disobj.window.clientHeight) {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor + this.calculateScrollWidth()) + 'px';
+    } else {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor) + 'px';
+    }
+    disobj.userlist.style.height = disobj.window.clientHeight + "px";
     disobj.chat.style.width = (disobj.window.clientWidth - disobj.userlist.offsetWidth - disobj.fudgeFactor) + "px";
 };
 
-jIRCs.prototype.removeUser = function(disobj, user) {
-    if (user in disobj.userlist_dict) {
-        var entry = disobj.userlist_dict[user];
-        disobj.userlist.removeChild(entry);
-        delete disobj.userlist_dict[user];
+jIRCs.prototype.userListRemove = function(disobj, user) {
+    disobj.userlist.removeChild(user.element);
 
-        // just measuring size of nickname, not including @, &, ~, but we are only using the height here
-        var dim = this.measureText(user, 'jircs_userlist_user');
-        disobj.ulisth -= dim["height"];
-        if(disobj.ulisth > disobj.window.clientHeight) {
-            disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor + this.calculateScrollWidth()) + 'px';
-        } else {
-            disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor) + 'px';
-        }
+    var dim = this.measureText(user.statusList + user.nickname, 'jircs_userlist_user');
+    disobj.ulisth -= dim["height"];
+    if (disobj.ulisth > disobj.window.clientHeight) {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor + this.calculateScrollWidth()) + 'px';
+    } else {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor) + 'px';
     }
 };
 
@@ -463,9 +469,6 @@ jIRCs.prototype.renderLine = function(channel, speaker, message, disobj) {
         "name": this.measureText(user.textContent || user.innerText, user.className).width,
         "message": this.measureText(text.textContent || text.innerText, text.className).width
     };
-    if(!(channel in this.channels)) {
-        this.channels[channel] = {} // Add a new object in which we can store channel data
-    }
     // Track open channels
     var open = [];
     this.forEach(this.displays, function(d) {
@@ -827,7 +830,8 @@ jIRCs.prototype.el_input_keydown = function(disobj, e) {
         var name = e.target.value.substring(begin,end);
         var possible = [];
         // Complete the name
-        this.forEach(this.channels[disobj.viewing].names, function(status, n) {
+        this.forEach(this.channels[disobj.viewing].users.array, function(user) {
+            var n = user.nickname;
             if(n.substring(0,name.length).toLowerCase() == name.toLowerCase()) {
                 possible.push(n);
             }

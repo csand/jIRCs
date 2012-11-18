@@ -10,10 +10,14 @@ jIRCs.prototype.irc_NICK = function(prefix, args) {
         allCookies.setItem("jirc-nickname", this.nickname);
     }
     this.forEach(this.channels, function(c, channel) {
-        if(c.names && oldNick in c.names) {
-            this.renderLine(channel, channel, oldNick + ' is now known as ' + newNick);
-            c.names[newNick] = c.names[oldNick];
-            delete(c.names[oldNick]);
+        if (c.users) {
+            var user = c.users.lookupByName(oldNick);
+            if (user) {
+                this.renderLine(channel, channel, oldNick + ' is now known as ' + newNick);
+                c.users.remove(user);
+                user.nickname = newNick;
+                c.users.insert(user);
+            }
         }
     }, this);
     this.forEach(this.displays, function(disobj) {
@@ -23,15 +27,23 @@ jIRCs.prototype.irc_NICK = function(prefix, args) {
 
 jIRCs.prototype.irc_JOIN = function(prefix, args) { 
     var channel = args.pop().toLowerCase();
+    if(!(channel in this.channels)) {
+        // Initiate channel
+        this.channels[channel] = {
+            'users': new jSortedList(jUserKeyFunc, jUserCmpFunc),
+            'modes': {},
+        };
+    }
+
     if(prefix != this.nickname) {
         //this.renderLine(channel, channel, prefix + " joined " + channel);
     } else {
         this.renderLine(channel, channel, "You have joined " + channel);
     }
-    if(!this.channels[channel].names) {
-        this.channels[channel].names = {};
-    }
-    this.channels[channel].names[prefix] = "";
+
+    var user = new jUser(prefix);
+    this.channels[channel].users.insert(user);
+
     if (!this.channels[channel].modes) {
         this.channels[channel].modes = {};
         this.send('MODE', [channel]); // Get the initial modes because the server doesn't send them by default
@@ -39,9 +51,6 @@ jIRCs.prototype.irc_JOIN = function(prefix, args) {
     this.forEach(this.displays, function(disobj) {
         if(channel.charAt(0) == "#" && prefix == this.nickname) {
             this.activateChan(channel, disobj);
-        }
-        if(disobj.viewing == channel) {
-            this.addUser(disobj);
         }
     }, this);
 };
@@ -53,12 +62,7 @@ jIRCs.prototype.irc_PART = function(prefix, args) {
         this.destroyChan(channel);
     } else {
         //this.renderLine(channel, channel, prefix + " left " + channel + " [" + reason + "]");
-        delete(this.channels[channel].names[prefix]);
-        this.forEach(this.displays, function(disobj) {
-            if(disobj.viewing == channel) {
-                this.removeUser(disobj, prefix);
-            }
-        }, this);
+        this.channels[channel].users.removeByKey(prefix);
     }
 };
 
@@ -68,18 +72,13 @@ jIRCs.prototype.irc_QUIT = function(prefix, args) {
         if(channel == 'Status') {
             return;
         }
-        if(c.names && prefix in c.names) {
-            //this.renderLine(channel, channel, prefix + ' quit (' + reason + ')');
-            delete(c.names[prefix]);
+        if (c.users) {
+            var user = c.users.lookupByName(prefix);
+            if (user) {
+                c.users.remove(user);
+            }
         }
     }, this);
-    if(this.getNick(prefix) == this.nickname) {
-        // Let ondisconnect handle cleanup
-    } else {
-        this.forEach(this.displays, function(disobj) {
-            this.removeUser(disobj, prefix);
-        }, this);
-    }
 };
 
 jIRCs.prototype.irc_PRIVMSG = function(prefix, args) { 
@@ -262,8 +261,8 @@ jIRCs.prototype.irc_324 = function(prefix, args) {
 jIRCs.prototype.irc_353 = function(prefix, args) {
     var channel = args[2].toLowerCase();
     if (!this.channels[channel].moreNames) {
-        this.channels[channel].names = {};
         this.channels[channel].moreNames = true;
+        this.channels[channel].users.erase();
     }
     var names = args[3].split(' '); // Strip the colon and split the names out
     this.forEach(names, function(name) {
@@ -272,7 +271,10 @@ jIRCs.prototype.irc_353 = function(prefix, args) {
             statusList += name.charAt(0);
             name = name.substr(1);
         }
-        this.channels[channel].names[name] = statusList;
+
+        var user = new jUser(name);
+        user.statusList = statusList;
+        this.channels[channel].users.insert(user);
     }, this);
 };
 
