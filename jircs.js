@@ -209,6 +209,14 @@ function jUserKeyFunc(u) {
 }
 
 function jUserCmpFunc(k1, k2) {
+    var s1 = (6 - ("~&@%+".indexOf(k1.charAt(0)) + 1)) % 6;
+    var s2 = (6 - ("~&@%+".indexOf(k2.charAt(0)) + 1)) % 6;
+    if(s1) k1 = k1.substr(1);
+    if(s2) k2 = k2.substr(1);
+    if(s1 > s2)
+        return -1;
+    if(s1 < s2)
+        return 1;
     if (k1.toLowerCase() > k2.toLowerCase())
         return 1;
     if (k1.toLowerCase() < k2.toLowerCase())

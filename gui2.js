@@ -412,7 +412,11 @@ jIRCs.prototype.userListInsert = function(disobj, user, referenceUser) {
     var text = jUserKeyFunc(user);
     p.appendChild(document.createTextNode(text));
     p.className = 'jircs_userlist_user';
-    disobj.userlist.insertBefore(p, referenceUser.element);
+    if(referenceUser) {
+        disobj.userlist.insertBefore(p, referenceUser.element);
+    } else {
+        disobj.userlist.appendChild(p);
+    }
     user.element = p;
     var dim = this.measureText(text, 'jircs_userlist_user');
     disobj.ulistw = Math.max(dim["width"], disobj.ulistw);

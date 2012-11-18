@@ -168,8 +168,9 @@ jIRCs.prototype.irc_NOTICE = function(prefix, args) {
 
 jIRCs.prototype.irc_KICK = function(prefix, args) {
     var channel = args.shift().toLowerCase();
+    var nick = args.shift();
     var message = args.pop();
-    this.renderLine(channel, "<"+prefix+">", "\u00034You have been kicked from "+channel+" (Reason: "+message+")");
+    this.renderLine(channel, "<"+prefix+">", "\u00034"+nick+" has been kicked from "+channel+" (Reason: "+message+")");
 };
 
 jIRCs.prototype.irc_MODE = function(prefix, args) {

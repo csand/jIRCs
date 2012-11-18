@@ -35,6 +35,7 @@ jSortedList.prototype.binarySearch = function(needleKey) {
 
 jSortedList.prototype.insert = function(obj) {
     var key = this.keyFunction(obj);
+    key = key.toLowerCase();
     if (key in this.keyDict) {
         this.removeByKey(key);
     }
@@ -42,18 +43,20 @@ jSortedList.prototype.insert = function(obj) {
     var isLast = location == this.array.length;
     this.array.splice(location, 0, obj);
     this.keyDict[key] = obj;
-    this.nameDict[obj.nickname] = obj;
+    this.nameDict[obj.nickname.toLowerCase()] = obj;
     for (var i = 0; i < this.insertCallbacks.length; i++) {
         this.insertCallbacks[i](obj, isLast ? null : this.array[location + 1]);
     }
 };
 
 jSortedList.prototype.removeByKey = function(key) {
+    key = key.toLowerCase();
     if (key in this.keyDict) {
         var obj = this.keyDict[key];
         var location = this.binarySearch(key);
         this.array.splice(location, 1);
         var name = obj.nickname;
+        name = name.toLowerCase();
         delete this.keyDict[key];
         delete this.nameDict[name];
         for (var i = 0; i < this.removeCallbacks.length; i++) {
@@ -64,10 +67,12 @@ jSortedList.prototype.removeByKey = function(key) {
 
 jSortedList.prototype.remove = function(obj) {
     var key = this.keyFunction(obj);
+    key = key.toLowerCase();
     if (key in this.keyDict) {
         var location = this.binarySearch(key);
         this.array.splice(location, 1);
         var name = this.keyDict[key].nickname;
+        name = name.toLowerCase();
         delete this.keyDict[key];
         delete this.nameDict[name];
         for (var i = 0; i < this.removeCallbacks.length; i++) {
@@ -82,13 +87,14 @@ jSortedList.prototype.erase = function(callback) {
     this.keyDict = {};
     this.nameDict = {};
     for (var i = 0; i < tempArray.length; i++) {
-        for (var j = 0; j < this.removeCallbacks.length; i++) {
+        for (var j = 0; j < this.removeCallbacks.length; j++) {
             this.removeCallbacks[j](tempArray[i]);
         }
     }
 };
 
 jSortedList.prototype.lookupByName = function(name) {
+    name = name.toLowerCase();
     if (name in this.nameDict) {
         return this.nameDict[name];
     }
