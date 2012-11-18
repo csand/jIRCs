@@ -47,6 +47,10 @@ jIRCs.prototype.display = function(container) {
         'messages': messages,
         'notification': notification,
         'userlist': userlist,
+        'ulistw': 0,
+        'ulisth': 0,
+        // How much do we skew our measurements by?
+        'fudgeFactor': 4,
         'inputbar': inputbar,
         'status': status,
         'form': form,
@@ -79,7 +83,9 @@ jIRCs.prototype.display = function(container) {
             'show_auction': true
         },
         'auction_running': false,
-        'note_timer': false
+        'note_timer': false,
+        'userInsertCallback': null,
+        'userRemoveCallback': null,
     };
     
     // Set all them fancy classes
@@ -265,7 +271,26 @@ jIRCs.prototype.activateChan = function(channel, disobj) {
         }, this);
         disobj.tabs[channel].className += " jircs_tab_active";
         disobj.history.push(disobj.viewing);
+
+        // TODO: Encapsulate lazy instantiation of channels
+        if(!(channel in this.channels)) {
+            // Initiate channel
+            this.channels[channel] = {
+                'users': new jSortedList(jUserKeyFunc, jUserCmpFunc),
+                'modes': {},
+            };
+        }
+
+        if (disobj.viewing && this.channels[disobj.viewing]) {
+            this.channels[disobj.viewing].users.unregisterInsertCallback(disobj.userInsertCallback);
+            this.channels[disobj.viewing].users.unregisterRemoveCallback(disobj.userRemoveCallback);
+        }
         disobj.viewing = channel;
+        disobj.userInsertCallback = this.userListInsert.bind(this, disobj);
+        disobj.userRemoveCallback = this.userListRemove.bind(this, disobj);
+        this.channels[disobj.viewing].users.registerInsertCallback(disobj.userInsertCallback);
+        this.channels[disobj.viewing].users.registerRemoveCallback(disobj.userRemoveCallback);
+
         // Re-render (involves replacing all the messages)
         disobj.messages.innerHTML = "";
         this.forEach(disobj.lines[channel], function(line) {
@@ -278,8 +303,6 @@ jIRCs.prototype.activateChan = function(channel, disobj) {
 };
 
 jIRCs.prototype.render = function(disobj) {
-    // How much do we skew our measurements by?
-    var fudgeFactor = 4; //px
     // Re-generate topic
     disobj.topic.innerHTML = "";
     if(disobj.viewing in this.channels && this.channels[disobj.viewing].topic) {
@@ -307,60 +330,17 @@ jIRCs.prototype.render = function(disobj) {
     }
     // Re-generate auction
     // Re-generate userlist
-    var ulistw = 0, ulisth = 0;
-    if(disobj.viewing in this.channels) {
-        disobj.userlist.innerHTML = "";
-        var users = {};
-        var prefix = '', rank = '';
-        // Break users into ranks
-        this.forEach(this.channels[disobj.viewing].names, function(prefix, u) {
-            if(prefix.length) {
-                prefix = prefix.charAt(0);
-            }
-            rank = prefix in this.statuses ? this.statuses[prefix] : '';
-            if(!(rank in users)) {
-                users[rank] = [];
-            }
-            users[rank].push(prefix + u);
-        }, this);
-        // Add users to DOM
-        this.forEach(this.statusOrder, function(r) {
-            if(!(r in users)) {
-                return;
-            }
-            var ulist = users[r];
-            // Case insensitive sort
-            ulist.sort(function(a,b) { if(a.toLowerCase() > b.toLowerCase()) return 1; if(a.toLowerCase() < b.toLowerCase()) return -1; return 0;});
-            this.forEach(ulist, function(u) {
-                var p = document.createElement('p');
-                p.style.margin = "0";
-                p.style.cursor = "pointer";
-                this.listen(p, "click", this.el_userentry_click, disobj);
-                p.appendChild(document.createTextNode(u));
-                p.className = 'jircs_userlist_user';
-                disobj.userlist.appendChild(p);
-                var dim = this.measureText(u,'jircs_userlist_user');
-                ulistw = Math.max(dim["width"], ulistw);
-                ulisth += dim["height"];
-            }, this);
-        }, this);
-    }
+    this.renderUserList(disobj);
     // Re-generate input bar
     disobj.name.innerHTML = "";
     disobj.name.appendChild(document.createTextNode(this.nickname+"\u00A0")); // \u00A0 = non-breaking space
     disobj.input.style.width = "0px";
-    disobj.input.style.width = (disobj.inputbar.clientWidth - disobj.form.offsetWidth - fudgeFactor) + "px";
+    disobj.input.style.width = (disobj.inputbar.clientWidth - disobj.form.offsetWidth - disobj.fudgeFactor) + "px";
     // Fix all the heights
     disobj.window.style.height = "0px";
     componentHeight = disobj.tabbar.offsetHeight + disobj.topic.offsetHeight + disobj.auction.offsetHeight + disobj.window.offsetHeight + disobj.inputbar.offsetHeight + disobj.status.offsetHeight;
     disobj.window.style.height = (disobj.container.clientHeight - componentHeight) + "px";
-    if(ulisth > disobj.window.clientHeight) {
-        disobj.userlist.style.width = (ulistw + fudgeFactor + this.calculateScrollWidth()) + 'px';
-    } else {
-        disobj.userlist.style.width = (ulistw + fudgeFactor) + 'px';
-    }
-    disobj.userlist.style.height = disobj.window.clientHeight + "px";
-    disobj.chat.style.width = (disobj.window.clientWidth - disobj.userlist.offsetWidth - fudgeFactor) + "px";
+    disobj.chat.style.width = (disobj.window.clientWidth - disobj.userlist.offsetWidth - disobj.fudgeFactor) + "px";
     disobj.messages.style.height = (disobj.window.clientHeight - disobj.notification.offsetHeight) + "px";
     // Ensure standardized width of messages
     var timew = 0, namew = 0, mesh = 0, mesw = 0;
@@ -373,7 +353,7 @@ jIRCs.prototype.render = function(disobj) {
         namew = Math.max(dim["width"], namew);
     }, this);
     // Assume we need scrollbars
-    mesw = disobj.messages.clientWidth - timew - namew - fudgeFactor - this.calculateScrollWidth() - this.measureText("","jircs_chatText jircs_action jircs_hilight")["width"];
+    mesw = disobj.messages.clientWidth - timew - namew - disobj.fudgeFactor - this.calculateScrollWidth() - this.measureText("","jircs_chatText jircs_action jircs_hilight")["width"];
     this.forEach(disobj.lines[disobj.viewing], function(line) {
         line.time.style.width = timew + "px";
         line.name.style.width = namew + "px";
@@ -381,8 +361,8 @@ jIRCs.prototype.render = function(disobj) {
         mesh += line.container.offsetHeight;
     }, this);
     // If it turns out we don't need scrollbars, fill in the extra space
-    if(mesh + fudgeFactor < disobj.messages.clientHeight) {
-        mesw = disobj.messages.clientWidth - timew - namew - fudgeFactor - this.measureText("","jircs_chatText jircs_action jircs_hilight")["width"];
+    if(mesh + disobj.fudgeFactor < disobj.messages.clientHeight) {
+        mesw = disobj.messages.clientWidth - timew - namew - disobj.fudgeFactor - this.measureText("","jircs_chatText jircs_action jircs_hilight")["width"];
         this.forEach(disobj.lines[disobj.viewing], function(line) {
             line.message.style.width = mesw + "px";
         }, this);
@@ -393,7 +373,69 @@ jIRCs.prototype.render = function(disobj) {
     disobj.widths[disobj.viewing].time = timew;
     disobj.widths[disobj.viewing].name = namew;
     disobj.widths[disobj.viewing].message = mesw;
-    disobj.widths[disobj.viewing].height = mesh + fudgeFactor;
+    disobj.widths[disobj.viewing].height = mesh + disobj.fudgeFactor;
+};
+
+jIRCs.prototype.renderUserList = function(disobj) {
+    disobj.ulistw = 0, disobj.ulisth = 0;
+    if(disobj.viewing in this.channels) {
+        disobj.userlist.innerHTML = "";
+        // Add users to DOM
+        this.forEach(this.channels[disobj.viewing].users.array, function(user) {
+            var p = document.createElement('p');
+            p.style.margin = "0";
+            p.style.cursor = "pointer";
+            this.listen(p, "click", this.el_userentry_click, disobj);
+            var text = jUserKeyFunc(user);
+            p.appendChild(document.createTextNode(text));
+            p.className = 'jircs_userlist_user';
+            disobj.userlist.appendChild(p);
+            user.element = p;
+            var dim = this.measureText(text, 'jircs_userlist_user');
+            disobj.ulistw = Math.max(dim["width"], disobj.ulistw);
+            disobj.ulisth += dim["height"];
+        }, this);
+    }
+    if(disobj.ulisth > disobj.window.clientHeight) {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor + this.calculateScrollWidth()) + 'px';
+    } else {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor) + 'px';
+    }
+    disobj.userlist.style.height = disobj.window.clientHeight + "px";
+};
+
+jIRCs.prototype.userListInsert = function(disobj, user, referenceUser) {
+    var p = document.createElement('p');
+    p.style.margin = "0";
+    p.style.cursor = "pointer";
+    this.listen(p, "click", this.el_userentry_click, disobj);
+    var text = jUserKeyFunc(user);
+    p.appendChild(document.createTextNode(text));
+    p.className = 'jircs_userlist_user';
+    disobj.userlist.insertBefore(p, referenceUser.element);
+    user.element = p;
+    var dim = this.measureText(text, 'jircs_userlist_user');
+    disobj.ulistw = Math.max(dim["width"], disobj.ulistw);
+    disobj.ulisth += dim["height"];
+    if(disobj.ulisth > disobj.window.clientHeight) {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor + this.calculateScrollWidth()) + 'px';
+    } else {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor) + 'px';
+    }
+    disobj.userlist.style.height = disobj.window.clientHeight + "px";
+    disobj.chat.style.width = (disobj.window.clientWidth - disobj.userlist.offsetWidth - disobj.fudgeFactor) + "px";
+};
+
+jIRCs.prototype.userListRemove = function(disobj, user) {
+    disobj.userlist.removeChild(user.element);
+
+    var dim = this.measureText(user.statusList + user.nickname, 'jircs_userlist_user');
+    disobj.ulisth -= dim["height"];
+    if (disobj.ulisth > disobj.window.clientHeight) {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor + this.calculateScrollWidth()) + 'px';
+    } else {
+        disobj.userlist.style.width = (disobj.ulistw + disobj.fudgeFactor) + 'px';
+    }
 };
 
 jIRCs.prototype.renderLine = function(channel, speaker, message, disobj) {
@@ -431,9 +473,6 @@ jIRCs.prototype.renderLine = function(channel, speaker, message, disobj) {
         "name": this.measureText(user.textContent || user.innerText, user.className).width,
         "message": this.measureText(text.textContent || text.innerText, text.className).width
     };
-    if(!(channel in this.channels)) {
-        this.channels[channel] = {} // Add a new object in which we can store channel data
-    }
     // Track open channels
     var open = [];
     this.forEach(this.displays, function(d) {
@@ -795,7 +834,8 @@ jIRCs.prototype.el_input_keydown = function(disobj, e) {
         var name = e.target.value.substring(begin,end);
         var possible = [];
         // Complete the name
-        this.forEach(this.channels[disobj.viewing].names, function(status, n) {
+        this.forEach(this.channels[disobj.viewing].users.array, function(user) {
+            var n = user.nickname;
             if(n.substring(0,name.length).toLowerCase() == name.toLowerCase()) {
                 possible.push(n);
             }
