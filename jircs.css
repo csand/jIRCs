@@ -1,4 +1,9 @@
 /* Global stuff */
+*, *:before, *:after {
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
 .jircs_main a, .jircs_main a:link, .jircs_main a:visited {
     color: #009;
 }
@@ -8,9 +13,26 @@
 
 /* The major elements */
 .jircs_main {
+    position: relative;
     width: 100%;
     font-family: Calibri, Verdana, Tahoma, Optima, Arial, sans-serif;
     font-size: 16px;
+    overflow: hidden;
+}
+.jircs_header {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 9;
+}
+.jircs_content {
+    height: 100%;
+}
+.jircs_footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    z-index: 9;
 }
 .jircs_tabbar {
     background-color: #AAA;
@@ -19,29 +41,61 @@
     font-size: 0.85em;
 }
 .jircs_topic_message {
+    margin: 0;
 }
 .jircs_topic_creator {
+    margin: 0;
     text-align: right;
 }
 .jircs_auction {
+    display: none;
+    text-align: center;
 }
-.jircs_window {
+.jircs_chat {
+    position: relative;
+    display: inline-block;
+    height: 100%;
+    width: 85%;
 }
-.jirc_chat {
+.jircs_messages_wrapper {
+    height: 100%;
 }
 .jircs_messages {
+    vertical-align: top;
+    overflow: auto;
+    height: 100%;
 }
-.jircs_notificiation {
+.jircs_butts {
+    display: none;
+    margin: auto;
+    height: 100%;
+}
+.jircs_notification {
+    position: absolute;
+    bottom: 0;
 }
 .jircs_userlist {
+    display: inline-block;
+    vertical-align: top;
+    overflow: auto;
+    height: 100%;
+    width: 15%;
+    text-align: right;
+    padding-right: 12px;
+}
+.jircs_userlist_user {
+    margin: 0;
+    cursor: pointer;
 }
 .jircs_inputbar {
 }
 .jircs_form {
+    display: inline-block;
 }
 .jircs_name {
 }
 .jircs_input {
+    display: inline-block;
 }
 .jircs_send {
 }
@@ -50,12 +104,16 @@
 }
 /* Status parts */
 .jircs_status_normal {
+    display: inline-block;;
+    float: left;
 }
 .jircs_status_connected {
 }
 .jircs_status_account {
 }
 .jircs_status_special {
+    display: inline-block;
+    float: right;
 }
 .jircs_status_hideulist {
 }
@@ -63,28 +121,68 @@
 }
 /* Auction parts */
 .jircs_auction_image {
+    height: 100px;
+    width: auto;
+}
+.jircs_auction_holder {
+    display: inline-block;
+    vertical-align: top;
+    text-align: left;
+    margin: 12px 24px;
+    min-width: 240px;
 }
 .jircs_auction_title {
+    font-size: 1.2em;
+    font-weight: bold;
 }
 .jircs_auction_bidder {
 }
 .jircs_auction_bid {
 }
+.jircs_auction_smack {
+    font-style: italic;
+}
 .jircs_auction_form {
+    display: inline-block;
 }
-.jircs_auction_input {
+.jircs_auction_form_header {
+    font-size: 1.2em;
+    font-weight: bold;
 }
-.jircs_auction_submit {
+.jircs_auction_form_bid {
+}
+.jircs_auction_form_smack {
+}
+.jircs_auction_form_submit {
+}
+.jircs_auction_form_bid_label {
+    display: inline-block;
+    width: 120px;
+}
+.jircs_auction_form_bid_input {
+}
+.jircs_auction_form_smack_label {
+    display: inline-block;
+    width: 120px;
+}
+.jircs_auction_form_smack_input {
+}
+.jircs_auction_form_submit_input {
+    width: 100%;
 }
 /* Chat messages */
 .jircs_chatRow {
     border-bottom: 1px solid gray;
 }
 .jircs_chatDate {
+    display: inline-block;
 }
 .jircs_chatUser {
+    display: inline-block;
 }
 .jircs_chatText {
+    display: inline-block;
+    word-wrap: break-word;
 }
 .jircs_hilight {
     color: red;
@@ -97,6 +195,9 @@
 }
 /* Tab styling */
 .jircs_tab {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
     color: #222;
     background-color: #CCC;
     margin-left: 5px;

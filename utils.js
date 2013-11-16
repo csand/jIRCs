@@ -201,11 +201,15 @@ jIRCs.prototype.fixEvent = function(func, e) {
 };
 
 jIRCs.prototype.cancelEvent = function(e) {
+    if(e.stopPropagation) {
+        e.stopPropagation();
+    } else {
+        e.cancelBubble = true;
+    }
     if(e.preventDefault){  
         e.preventDefault();  
-    }else{  
-        e.returnValue = false;  
-        e.cancelBubble=true;  
+    } else {
+        e.returnValue = false;
     }
 };
 

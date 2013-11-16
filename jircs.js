@@ -205,7 +205,7 @@ function jUser(nickname) {
 }
 
 function jUserKeyFunc(u) {
-    return u.statusList + u.nickname;
+    return u.statusList.charAt(0) + u.nickname;
 }
 
 function jUserCmpFunc(k1, k2) {

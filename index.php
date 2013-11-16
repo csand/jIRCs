@@ -5,7 +5,14 @@
         <title>jIRCs Test</title>
         <link rel="stylesheet" type="text/css" href="jircs.css" />
         <script src="http://cdn.sockjs.org/sockjs-0.3.min.js"></script>
-        <script src="jircs.min.js"></script>
+        <script src="cookies.js"></script>
+        <script src="sorted_list.js"></script>
+        <script src="jircs.js"></script>
+        <script src="utils.js"></script>
+        <script src="gui3.js"></script>
+        <script src="irc_commands.js"></script>
+        <script src="user_commands.js"></script>
+        <script src="ctcp_commands.js"></script>
         <style>html, body, #jircs { height: 100%; width: 100%; margin: 0; }</style>
     </head>
     <body> 
@@ -64,22 +71,10 @@
                 form.appendChild(submit);
             
                 window.onresize = function() {
-                    var h = 460;
-                    if (document.body && document.body.offsetHeight) {
-                        h = document.body.offsetHeight;
-                    }
-                    if (document.compatMode=='CSS1Compat' && document.documentElement && document.documentElement.offsetHeight) {
-                        h = document.documentElement.offsetHeight;
-                    }
-                    if (window.innerHeight) {
-                        h = window.innerHeight;
-                    }
-                    target.style.height = (h - 16) + "px";
                     if("irc" in window) {
                         irc.forEach(irc.displays, irc.render, irc);
                     }
                 };
-                window.onresize();
             
             })(document.getElementById("jircs"))
         </script>

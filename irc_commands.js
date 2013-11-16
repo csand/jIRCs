@@ -109,7 +109,7 @@ jIRCs.prototype.irc_PRIVMSG = function(prefix, args) {
         this.renderLine(channel, "<"+prefix+">", message);
     }
     if(prefix == "BidServ") {
-        var cleaned = message.replace("\u0001","").replace("\u0002","").replace("\u00034","").replace("\u000F","").replace("\u0016","").replace("\u001D","").replace("\u001F","");
+        var cleaned = message.replace("\u0001","").replace("\u0002","").replace("\u00034","").replace("\u000312").replace("\u000F","").replace("\u0016","").replace("\u001D","").replace("\u001F","");
         var parts = cleaned.split(" ");
         if(parts.slice(0,2).join(" ") == "Starting Auction") {
             var id = parts[4].slice(1,-1);
@@ -117,7 +117,7 @@ jIRCs.prototype.irc_PRIVMSG = function(prefix, args) {
             this.auctionStart(id,name);
         } else if(parts.slice(0,3).join(" ") == "Beginning bidding at") {
             var starting = parts[3];
-            this.auctionBid(starting,"Nobody");
+            this.auctionBid(starting,"Nobody","");
         } else if(~cleaned.indexOf("has the high bid of")) { // ~ abuses two's complement notation to make -1 false, and everything else true
             var index = 0;
             while(index < parts.length - 5) {
@@ -127,13 +127,14 @@ jIRCs.prototype.irc_PRIVMSG = function(prefix, args) {
             }
             var bidder = parts[index];
             var bid = parts[index + 6];
-            this.auctionBid(bid,bidder);
+            var smack = parts.slice(index + 7).join(" ")
+            this.auctionBid(bid,bidder,smack);
         } else if(~cleaned.indexOf("New highest bid is by")) {
             parts = cleaned.substr(cleaned.indexOf("New highest bid is by")).split(" ");
             var bidder = parts[5];
             var bid = parts[7];
-            this.auctionBid(bid,bidder);
-        } else if(parts.slice(0,2).join(" ") == "Auction for" && ~cleaned.indexOf("cancelled")) {
+            this.auctionBid(bid,bidder,"");
+        } else if(parts.slice(0,2).join(" ") == "Auction for" && ~cleaned.indexOf("canceled")) {
             this.auctionStop();
         } else if(parts[0] == "Sold!") {
             this.auctionStop();
