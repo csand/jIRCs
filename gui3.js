@@ -163,7 +163,7 @@ jIRCs.prototype.display = function(container) {
     input.type = 'text';
     send.type = "submit";
     send.value = "Send";
-    butts.src = "http://instant-grat.com/db6/grahambootyshake.gif";
+    butts.src = "https://desertbus.org/images/gifs/grahambootyshake.gif";
     messages.style.display = disobj.options.butt_mode ? "none" : "block";
     butts.style.display = disobj.options.butt_mode ? "block" : "none";
     status_connected.innerHTML = this.connected ? "Connected" : "Disconnected";
@@ -454,6 +454,14 @@ jIRCs.prototype.renderLine = function(channel, speaker, message, disobj) {
     var nickCheck = new RegExp("\\b" + this.cleanRegex(this.nickname) + "\\b",'ig');
     text.innerHTML = this.formatLine(text.innerHTML);
 
+    var statusClass = "";
+    if(channel in this.channels && speaker && speaker.charAt(0) == "<" && speaker.substr(-1) == ">") {
+        var juserlookup = this.channels[channel].users.lookupByName(speaker.slice(1,-1));
+        if(juserlookup && juserlookup.statusList) {
+            statusClass = " jircs_from_" + this.statuses[juserlookup.statusList.charAt(0)];
+        }
+    }
+
     // Track open channels
     var open = [];
     this.forEach(this.displays, function(d) {
@@ -475,7 +483,7 @@ jIRCs.prototype.renderLine = function(channel, speaker, message, disobj) {
         var d = date.cloneNode(true);
         var u = user.cloneNode(true);
         var t = text.cloneNode(true);
-        r.className = "jircs_chatRow";
+        r.className = "jircs_chatRow" + statusClass;
         if(nickCheck.test(message)) { // Hilight
             r.className += " jircs_hilight";
         }

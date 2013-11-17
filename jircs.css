@@ -193,6 +193,28 @@
 .jircs_event {
     font-style: italic;
 }
+.jircs_from_q {
+    background: #AFC;
+    font-size: 1.06em;
+    -webkit-filter: invert(100%);
+    -moz-filter: invert(100%);
+    -ms-filter: invert(100%);
+    -o-filter: invert(100%);
+    filter: invert(100%);
+}
+.jircs_from_a {
+    background: #CFF;
+    font-size: 1.06em;
+}
+.jircs_from_o {
+    background: #FCB;
+}
+.jircs_from_h {
+    background: #CFC;
+}
+.jircs_from_v {
+    background: #FFD;
+}
 /* Tab styling */
 .jircs_tab {
     position: relative;

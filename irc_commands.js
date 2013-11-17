@@ -13,7 +13,7 @@ jIRCs.prototype.irc_NICK = function(prefix, args) {
         if (c.users) {
             var user = c.users.lookupByName(oldNick);
             if (user) {
-                this.renderLine(channel, channel, oldNick + ' is now known as ' + newNick);
+                //this.renderLine(channel, channel, oldNick + ' is now known as ' + newNick);
                 c.users.remove(user);
                 user.nickname = newNick;
                 c.users.insert(user);
